@@ -77,3 +77,4 @@ variables → Actions**:
 - **Dry-run mode** (`--dry-run` / `DRY_RUN=true`) logs proposed drafts without creating them.
 - Skipped posts are logged with the reason so you can spot-check the filter.
 - Secrets (`credentials.json`, `token.json`, `.env`) are gitignored.
+"# gmail_response_Agent" 
