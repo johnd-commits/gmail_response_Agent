@@ -1,0 +1,35 @@
+name: Gmail Triage
+
+on:
+  schedule:
+    # 07:00 America/New_York. GitHub cron is UTC; 11:00 UTC ≈ 7am EDT.
+    # (During EST this is 6am; adjust if you need exact local time year-round.)
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run without creating drafts"
+        type: boolean
+        default: false
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run triage
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_CLIENT_ID: ${{ secrets.GMAIL_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
+          GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: node index.js

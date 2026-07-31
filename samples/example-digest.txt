@@ -1,0 +1,29 @@
+Today's Topics:
+
+  1. Seeking psychiatric prescriber for adult, Aetna (Jane Smith)
+  2. Therapist referral needed (Bob Jones)
+
+----------------------------------------------------------------------
+
+Message: 1
+Date: Wed, 29 Jul 2026 10:12:00 -0400
+From: Jane Smith <jane.smith@example.com>
+Subject: Seeking psychiatric prescriber for adult, Aetna
+
+Hi all, I have a 34 y/o patient with Aetna looking for medication management
+for depression/anxiety. Established therapist already, needs a prescriber.
+Any availability? Thanks.
+View topic: https://groups.google.com/g/somelist/c/abc123
+
+----------------------------------------------------------------------
+
+Message: 2
+Date: Wed, 29 Jul 2026 11:02:00 -0400
+From: Bob Jones <bob.jones@example.com>
+Subject: Therapist referral needed
+
+Looking for a therapist (talk therapy only) for a teen, BCBS. No meds needed.
+Thanks!
+View topic: https://groups.google.com/g/somelist/c/def456
+
+----------------------------------------------------------------------

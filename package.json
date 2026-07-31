@@ -1,0 +1,21 @@
+{
+  "name": "email-parser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reads Google Groups listserv digests via Gmail, classifies posts with Claude, and creates draft replies (never auto-sends).",
+  "scripts": {
+    "auth": "node auth.js",
+    "start": "node index.js",
+    "dry-run": "node index.js --dry-run",
+    "parse:sample": "node digestParser.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0"
+  }
+}
