@@ -23,7 +23,6 @@ export const config = {
 
   // Insurers you accept. A post must involve a patient with one of these
   // (or self-pay explicitly) to be a candidate.
-  // NOTE: Medicare is intentionally NOT accepted by this practice.
   acceptedInsurers: [
     "Aetna",
     "Point32 / Harvard Pilgrim / Tufts",
@@ -31,15 +30,17 @@ export const config = {
     "Evernorth",
     "Blue Cross Blue Shield (BCBS)",
     "Mass General Brigham (MGB)",
+    "Medicare",
+    "Managed Medicare / Medicare Advantage plans",
   ],
 
   // The core clinical criteria that define a match.
-  // This practice provides THERAPY (talk therapy) for ADULTS (18+) and does NOT
-  // accept Medicare.
+  // This practice provides THERAPY (talk therapy) for ADULTS (18+) and accepts
+  // Medicare and some Managed Medicare / Medicare Advantage plans.
   criteria: [
     "The poster is seeking a therapist / talk therapy (individual, couples, family, etc.). Requests seeking ONLY a prescriber or medication management do NOT match — this practice provides therapy, not prescribing.",
     "The patient is an adult, age 18 or older. Requests for children, adolescents, or anyone under 18 do NOT match.",
-    "The patient's insurance is one of the accepted insurers, OR the poster explicitly states self-pay. Medicare is NOT accepted, so a Medicare patient does NOT match. If insurance is not mentioned at all, treat as a weak/no match and explain.",
+    "The patient's insurance is one of the accepted insurers (which include Medicare and some Managed Medicare / Medicare Advantage plans), OR the poster explicitly states self-pay. If insurance is not mentioned at all, treat as a weak/no match and explain.",
     "The request is an active referral seeking a provider (not a general discussion, job posting, or administrative notice).",
   ],
 

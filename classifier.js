@@ -15,7 +15,8 @@ function getClient() {
 function buildSystemPrompt() {
   return [
     "You are a triage assistant for an outpatient therapy practice that provides",
-    "talk therapy for adults (age 18+) and does NOT accept Medicare.",
+    "talk therapy for adults (age 18+). It accepts the insurers listed below,",
+    "including Medicare and some Managed Medicare / Medicare Advantage plans.",
     "You review individual posts from a professional referral listserv and decide",
     "whether each post is a referral this practice should respond to.",
     "",
