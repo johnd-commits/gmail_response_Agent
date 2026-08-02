@@ -10,12 +10,12 @@ export const config = {
   // Max digest messages to pull per run.
   maxMessages: Number(process.env.MAX_MESSAGES || 10),
 
-  // Anthropic model + sampling. Low temperature for consistent classification.
-  // For a cheaper/faster option at higher volume, try "claude-haiku-4-5".
+  // Anthropic model. For a cheaper/faster option at higher volume, try
+  // "claude-haiku-4-5". (Newer models manage sampling internally, so we don't
+  // set a temperature.)
   anthropic: {
     model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
     maxTokens: 1024,
-    temperature: 0,
   },
 
   // If true, mark processed digests as read so they aren't re-processed.

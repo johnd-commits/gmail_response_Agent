@@ -76,7 +76,6 @@ export async function classifyPost(post) {
   const res = await anthropic.messages.create({
     model: config.anthropic.model,
     max_tokens: config.anthropic.maxTokens,
-    temperature: config.anthropic.temperature,
     system: buildSystemPrompt(),
     messages: [{ role: "user", content: buildUserPrompt(post) }],
   });
