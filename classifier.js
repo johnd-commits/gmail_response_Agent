@@ -28,23 +28,52 @@ function buildSystemPrompt() {
     "MATCH CRITERIA (ALL must be satisfied to match):",
     ...config.criteria.map((c) => `- ${c}`),
     "",
-    "When it matches, write a concise, warm, professional reply. CRITICAL RULES",
-    "for the reply — follow exactly:",
-    "- Do NOT invent or promise any specifics. Never state particular days,",
-    "  times, schedules, clinician names, genders, specialties, or modalities.",
-    "- State only that we have immediate availability.",
-    "- Ask the referrer to confirm the patient's insurance and to share the best",
-    "  contact info (or have the patient reach out), plus any urgency.",
-    "- Invite them to email info@bedrehealth.com to get started.",
-    "- Keep it brief (a few sentences). Do not claim anything not stated above.",
+    "When it matches, write a short, warm reply whose ONLY goal is to make it",
+    "effortless for the referrer to send the client to us. We do the selling; we",
+    "put ZERO work back on the referrer. Follow these rules exactly:",
+    "- Briefly reflect back the type of care they're seeking so it's clear we fit",
+    "  (e.g. 'individual therapy for an adult client working through OCD').",
+    "- Affirmatively state that we accept the insurance named in their post (name",
+    "  it). It only reached this step because the insurance is one we accept.",
+    "- State that we have immediate availability.",
+    "- Warmly invite the referral and tell them the client can reach us directly",
+    "  at info@bedrehealth.com or (781) 488-6163. Frame it as easy for them.",
+    "- Do NOT ask the referrer to confirm insurance, collect contact details, or",
+    "  provide urgency/plan specifics. Never put a task back on them.",
+    "- Do NOT invent specifics: no particular days/times, clinician names,",
+    "  genders, specialties, or modalities (telehealth/in-person). Availability",
+    "  is described only as 'immediate availability'.",
+    "- Keep it to about 3 short sentences before the signature.",
     "- End with this exact signature block, verbatim:",
     config.signature,
     "",
-    "Respond with ONLY a JSON object, no prose, no code fences, of the form:",
-    '{"matches": boolean, "reason": string, "draftReply": string}',
-    'If matches is false, set draftReply to "".',
+    "Return your decision by calling the record_triage tool. If matches is false,",
+    "set draftReply to an empty string.",
   ].join("\n");
 }
+
+const TRIAGE_TOOL = {
+  name: "record_triage",
+  description: "Record the triage decision and, when applicable, the draft reply.",
+  input_schema: {
+    type: "object",
+    properties: {
+      matches: {
+        type: "boolean",
+        description: "True if this post is a referral the practice should respond to.",
+      },
+      reason: {
+        type: "string",
+        description: "A brief explanation of the decision.",
+      },
+      draftReply: {
+        type: "string",
+        description: "The full draft reply when matches is true; otherwise an empty string.",
+      },
+    },
+    required: ["matches", "reason", "draftReply"],
+  },
+};
 
 function buildUserPrompt(post) {
   return [
@@ -61,22 +90,10 @@ function buildUserPrompt(post) {
     .join("\n");
 }
 
-function extractJson(text) {
-  const cleaned = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const start = cleaned.indexOf("{");
-    const end = cleaned.lastIndexOf("}");
-    if (start !== -1 && end !== -1 && end > start) {
-      return JSON.parse(cleaned.slice(start, end + 1));
-    }
-    throw new Error(`Could not parse JSON from model response: ${text.slice(0, 200)}`);
-  }
-}
-
 /**
  * Classifies a single parsed post. Returns { matches, reason, draftReply }.
+ * Uses Anthropic tool use so the structured result is returned as a validated
+ * object (no fragile text/JSON parsing of multi-line draft bodies).
  */
 export async function classifyPost(post) {
   const anthropic = getClient();
@@ -84,18 +101,22 @@ export async function classifyPost(post) {
     model: config.anthropic.model,
     max_tokens: config.anthropic.maxTokens,
     system: buildSystemPrompt(),
+    tools: [TRIAGE_TOOL],
+    tool_choice: { type: "tool", name: "record_triage" },
     messages: [{ role: "user", content: buildUserPrompt(post) }],
   });
 
-  const text = res.content
-    .filter((b) => b.type === "text")
-    .map((b) => b.text)
-    .join("");
+  const toolUse = res.content.find(
+    (b) => b.type === "tool_use" && b.name === "record_triage"
+  );
+  if (!toolUse) {
+    throw new Error("Model did not return a record_triage tool call.");
+  }
 
-  const parsed = extractJson(text);
+  const input = toolUse.input || {};
   return {
-    matches: Boolean(parsed.matches),
-    reason: parsed.reason || "",
-    draftReply: parsed.draftReply || "",
+    matches: Boolean(input.matches),
+    reason: input.reason || "",
+    draftReply: input.draftReply || "",
   };
 }
