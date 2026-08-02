@@ -11,8 +11,9 @@ export const config = {
   maxMessages: Number(process.env.MAX_MESSAGES || 10),
 
   // Anthropic model + sampling. Low temperature for consistent classification.
+  // For a cheaper/faster option at higher volume, try "claude-haiku-4-5".
   anthropic: {
-    model: process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-latest",
+    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5",
     maxTokens: 1024,
     temperature: 0,
   },
