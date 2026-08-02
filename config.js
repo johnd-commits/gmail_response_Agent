@@ -37,6 +37,7 @@ export const config = {
     "Evernorth",
     "Blue Cross Blue Shield (BCBS)",
     "Mass General Brigham (MGB)",
+    "Cigna (incl. Evernorth behavioral health)",
     "Medicare",
     "Managed Medicare / Medicare Advantage plans",
   ],
