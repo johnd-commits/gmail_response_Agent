@@ -4,21 +4,43 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Google Groups digests bundle many posts into one email. The exact layout
-// varies, so this parser is intentionally heuristic and defensive. Test it
-// against real saved digests in ./samples and tune the regexes as needed.
+// Parser for Google Groups digest emails. Real digests look like:
+//
+//   ====================...
+//   Today's topic summary
+//   ====================...
+//   Group: ...
+//   Url: ...
+//     - Topic title [1 Update]
+//       http://groups.google.com/...
+//
+//   ====================...
+//   Topic: <topic title>
+//   Url: <topic url>
+//   ====================...
+//
+//   ---------- 1 of 2 ----------
+//   From: Jane Doe <jane@example.com>
+//   Date: Jul 31 12:32PM -0400
+//   Url: http://groups.google.com/.../msg/...
+//
+//   <message body, possibly with quoted replies>
+//
+//   --
+//   You received this message because you are subscribed ...
 //
 // A parsed post looks like:
-//   { index, topic, sender, senderEmail, snippet, link, body }
+//   { topic, sender, senderEmail, date, link, snippet, body }
 
-const SEPARATOR_RE = /^[-=_]{20,}\s*$/m;
-const MESSAGE_MARKER_RE = /^(?:Message|Msg)\s*[:#]?\s*\d+/im;
+const TOPIC_RE = /^Topic:\s*(.+)$/;
+const URL_RE = /^Url:\s*(\S+)/;
+const FROM_RE = /^From:\s*(.+)$/;
+const DATE_RE = /^Date:\s*(.+)$/;
+const MSG_DELIM_RE = /^-{5,}\s*\d+\s+of\s+\d+\s*-{5,}/;
 
-function extractHeader(block, name) {
-  const re = new RegExp(`^${name}\\s*:\\s*(.+)$`, "im");
-  const m = block.match(re);
-  return m ? m[1].trim() : undefined;
-}
+// Lines that mark the start of Google's per-message / digest footer boilerplate.
+const FOOTER_RE =
+  /^(You received this (message|digest)|To unsubscribe from this group|To view this discussion visit|Visit this group at)/;
 
 function splitFromHeader(fromValue) {
   if (!fromValue) return { sender: undefined, senderEmail: undefined };
@@ -28,82 +50,112 @@ function splitFromHeader(fromValue) {
   return { sender: fromValue.trim(), senderEmail: undefined };
 }
 
-function firstGroupsLink(block) {
-  const m = block.match(/https?:\/\/groups\.google\.com\/\S+/i);
-  return m ? m[0].replace(/[)>.,]+$/, "") : undefined;
+function stripFooter(body) {
+  const lines = body.split("\n");
+  let cut = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    if (FOOTER_RE.test(lines[i].trim())) {
+      cut = i;
+      // Drop a preceding "--" signature separator if present.
+      if (cut > 0 && /^--\s*$/.test(lines[cut - 1].trim())) cut -= 1;
+      break;
+    }
+  }
+  return lines.slice(0, cut).join("\n");
 }
 
 function cleanSnippet(body, max = 400) {
   const text = (body || "")
-    .split("\n")
-    .filter((line) => !/^>/.test(line)) // drop quoted lines
-    .join("\n")
     .replace(/\r/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   return text.length > max ? text.slice(0, max).trimEnd() + "…" : text;
 }
 
-/**
- * Splits a digest body into blocks that each look like an individual post.
- * Strategy: prefer separator lines; fall back to "Message: N" markers.
- */
-function splitIntoBlocks(body) {
-  let blocks = body
-    .split(SEPARATOR_RE)
-    .map((b) => b.trim())
-    .filter(Boolean);
-
-  // Keep only blocks that resemble a real post (have From + Subject).
-  const looksLikePost = (b) => /^from\s*:/im.test(b) && /^subject\s*:/im.test(b);
-  const postBlocks = blocks.filter(looksLikePost);
-  if (postBlocks.length) return postBlocks;
-
-  // Fallback: split on "Message: N" markers.
-  const byMarker = body
-    .split(new RegExp(`(?=${MESSAGE_MARKER_RE.source})`, "im"))
-    .map((b) => b.trim())
-    .filter((b) => looksLikePost(b));
-  return byMarker;
-}
-
-function blockToBody(block) {
-  // Body is whatever follows the last recognized header line.
-  const lines = block.split("\n");
-  let lastHeaderIdx = -1;
-  const headerRe = /^(from|to|subject|date|message|reply-to|cc)\s*:/i;
-  for (let i = 0; i < lines.length; i++) {
-    if (headerRe.test(lines[i])) lastHeaderIdx = i;
-    else if (lastHeaderIdx >= 0 && lines[i].trim() === "") break;
-  }
-  return lines.slice(lastHeaderIdx + 1).join("\n").trim();
+function buildPost(topic, topicUrl, msg) {
+  const rawBody = msg.bodyLines.join("\n");
+  // Trim leading/trailing separator/blank lines, then strip Google footer.
+  const body = stripFooter(rawBody.replace(/^[=\s]+/, "").replace(/[=\s]+$/, "")).trim();
+  return {
+    topic: (topic || "(no topic)").trim(),
+    sender: msg.sender || msg.senderEmail || "(unknown)",
+    senderEmail: msg.senderEmail,
+    date: msg.date,
+    link: msg.url || topicUrl,
+    snippet: cleanSnippet(body),
+    body,
+  };
 }
 
 export function parseDigest(digestBody) {
   if (!digestBody || typeof digestBody !== "string") return [];
+  const lines = digestBody.replace(/\r/g, "").split("\n");
 
-  const blocks = splitIntoBlocks(digestBody);
   const posts = [];
+  let currentTopic = null;
+  let currentTopicUrl = null;
+  let msg = null;
 
-  blocks.forEach((block, i) => {
-    const subject = extractHeader(block, "Subject");
-    const from = extractHeader(block, "From");
-    if (!subject && !from) return;
+  const flush = () => {
+    if (msg) {
+      posts.push(buildPost(currentTopic, currentTopicUrl, msg));
+      msg = null;
+    }
+  };
 
-    const { sender, senderEmail } = splitFromHeader(from);
-    const body = blockToBody(block);
+  for (let idx = 0; idx < lines.length; idx++) {
+    const line = lines[idx];
 
-    posts.push({
-      index: i + 1,
-      topic: subject || "(no subject)",
-      sender: sender || senderEmail || "(unknown)",
-      senderEmail,
-      link: firstGroupsLink(block),
-      snippet: cleanSnippet(body),
-      body,
-    });
-  });
+    const topicM = line.match(TOPIC_RE);
+    if (topicM) {
+      flush();
+      currentTopic = topicM[1].trim();
+      currentTopicUrl = null;
+      const next = lines[idx + 1] || "";
+      const um = next.match(URL_RE);
+      if (um) currentTopicUrl = um[1];
+      continue;
+    }
 
+    if (MSG_DELIM_RE.test(line)) {
+      flush();
+      msg = { sender: null, senderEmail: null, date: null, url: null, bodyLines: [], inHeader: true };
+      continue;
+    }
+
+    if (!msg) continue; // still in the summary header, before any message
+
+    if (msg.inHeader) {
+      const fromM = line.match(FROM_RE);
+      if (fromM) {
+        const { sender, senderEmail } = splitFromHeader(fromM[1]);
+        msg.sender = sender;
+        msg.senderEmail = senderEmail;
+        continue;
+      }
+      const dateM = line.match(DATE_RE);
+      if (dateM) {
+        msg.date = dateM[1].trim();
+        continue;
+      }
+      const urlM = line.match(URL_RE);
+      if (urlM) {
+        msg.url = urlM[1];
+        continue;
+      }
+      if (line.trim() === "") {
+        msg.inHeader = false;
+        continue;
+      }
+      // First non-empty, non-header line ends the header block.
+      msg.inHeader = false;
+      msg.bodyLines.push(line);
+    } else {
+      msg.bodyLines.push(line);
+    }
+  }
+
+  flush();
   return posts;
 }
 
@@ -124,7 +176,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const posts = parseDigest(content);
     console.log(`\n=== ${file}: ${posts.length} post(s) ===`);
     for (const p of posts) {
-      console.log(`\n#${p.index} [${p.sender}] ${p.topic}`);
+      console.log(`\n[${p.sender}] ${p.topic}`);
       console.log(`  link: ${p.link || "-"}`);
       console.log(`  snippet: ${p.snippet.slice(0, 160).replace(/\n/g, " ")}`);
     }

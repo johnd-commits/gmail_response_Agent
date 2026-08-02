@@ -1,29 +1,65 @@
-Today's Topics:
+=============================================================================
+Today's topic summary
+=============================================================================
 
-  1. Seeking psychiatric prescriber for adult, Aetna (Jane Smith)
-  2. Therapist referral needed (Bob Jones)
+Group: example-therapist-list@googlegroups.com
+Url: https://groups.google.com/forum/#!forum/example-therapist-list/topics
 
-----------------------------------------------------------------------
+  - Adult individual therapy, Aetna, Boston [1 Update]
+    http://groups.google.com/group/example-therapist-list/t/aaaa1111
+  - Seeking psychiatric prescriber (meds only) [1 Update]
+    http://groups.google.com/group/example-therapist-list/t/bbbb2222
+  - Teen therapy referral, BCBS [1 Update]
+    http://groups.google.com/group/example-therapist-list/t/cccc3333
 
-Message: 1
-Date: Wed, 29 Jul 2026 10:12:00 -0400
-From: Jane Smith <jane.smith@example.com>
-Subject: Seeking psychiatric prescriber for adult, Aetna
 
-Hi all, I have a 34 y/o patient with Aetna looking for medication management
-for depression/anxiety. Established therapist already, needs a prescriber.
-Any availability? Thanks.
-View topic: https://groups.google.com/g/somelist/c/abc123
+=============================================================================
+Topic: Adult individual therapy, Aetna, Boston
+Url: http://groups.google.com/group/example-therapist-list/t/aaaa1111
+=============================================================================
 
-----------------------------------------------------------------------
+---------- 1 of 1 ----------
+From: Pat Sample <pat.sample@example.com>
+Date: Aug 01 09:15AM -0400
+Url: http://groups.google.com/group/example-therapist-list/msg/aaaa1111a
 
-Message: 2
-Date: Wed, 29 Jul 2026 11:02:00 -0400
-From: Bob Jones <bob.jones@example.com>
-Subject: Therapist referral needed
+Hi all, I have a 42 y/o woman seeking individual talk therapy for anxiety.
+She has Aetna and prefers virtual. Any openings? Thanks.
 
-Looking for a therapist (talk therapy only) for a teen, BCBS. No meds needed.
-Thanks!
-View topic: https://groups.google.com/g/somelist/c/def456
+--
+You received this message because you are subscribed to the Google Groups "Example" group.
+To unsubscribe from this group and stop receiving emails from it, send an email to example-therapist-list+unsubscribe@googlegroups.com.
 
-----------------------------------------------------------------------
+
+=============================================================================
+Topic: Seeking psychiatric prescriber (meds only)
+Url: http://groups.google.com/group/example-therapist-list/t/bbbb2222
+=============================================================================
+
+---------- 1 of 1 ----------
+From: Chris Example <chris.example@example.com>
+Date: Aug 01 10:02AM -0400
+Url: http://groups.google.com/group/example-therapist-list/msg/bbbb2222b
+
+Looking for a psychiatric NP for medication management only (no therapy) for
+an adult with Optum. Established therapist already.
+
+--
+You received this message because you are subscribed to the Google Groups "Example" group.
+
+
+=============================================================================
+Topic: Teen therapy referral, BCBS
+Url: http://groups.google.com/group/example-therapist-list/t/cccc3333
+=============================================================================
+
+---------- 1 of 1 ----------
+From: Jamie Test <jamie.test@example.com>
+Date: Aug 01 11:20AM -0400
+Url: http://groups.google.com/group/example-therapist-list/msg/cccc3333c
+
+Seeking a therapist for a 15 y/o with BCBS for school anxiety. In-person
+preferred in the Worcester area.
+
+--
+You received this message because you are subscribed to the Google Groups "Example" group.

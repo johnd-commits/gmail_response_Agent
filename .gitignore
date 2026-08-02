@@ -5,3 +5,4 @@ dist/
 token.json
 credentials.json
 *.log
+samples/real-*.txt

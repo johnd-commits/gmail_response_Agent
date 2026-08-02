@@ -48,9 +48,9 @@ export const config = {
   // TODO: replace with your real name, credentials, practice, and contact.
   signature: process.env.SIGNATURE ||
     [
-      "[Your Name], [Credentials]",
-      "[Practice Name]",
-      "[Phone] | [Email]",
-      "[Availability / how to refer]",
+      "John Donovan FNP-BC, PMHNP-BC",
+      "Bedre Health — www.BedreHealth.com",
+      "P: (781) 488-6163 | F: (781) 443-8414",
+      "To schedule an appointment, email: info@bedrehealth.com",
     ].join("\n"),
 };
