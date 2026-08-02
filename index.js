@@ -10,7 +10,7 @@ import {
   getMessage,
   getPlainTextBody,
   getHeader,
-  createReplyDraft,
+  createReferralDraft,
   markAsRead,
   ensureLabel,
   getLabelId,
@@ -82,16 +82,20 @@ async function run() {
         continue;
       }
 
+      if (!post.senderEmail) {
+        log(`  ! no poster email parsed for "${post.topic}"; skipping draft.`);
+        continue;
+      }
+
       try {
-        // Reply into the original digest thread. If you later switch to
-        // per-message fetching, target the individual post's message instead.
-        const draft = await createReplyDraft(
-          gmail,
-          message,
-          result.draftReply,
-          post.senderEmail
-        );
-        log(`  ✓ draft created (id=${draft.id}).`);
+        // Standalone draft to the poster (not threaded onto the digest), so each
+        // referral shows as its own item in Drafts.
+        const draft = await createReferralDraft(gmail, {
+          toEmail: post.senderEmail,
+          subject: post.topic,
+          bodyText: result.draftReply,
+        });
+        log(`  ✓ draft created to ${post.senderEmail} (id=${draft.id}).`);
       } catch (err) {
         log(`  ! draft error for "${post.topic}": ${err.message}`);
       }

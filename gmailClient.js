@@ -176,6 +176,16 @@ export async function createDraft(gmail, { raw, threadId }) {
   return res.data;
 }
 
+/**
+ * Creates a standalone referral draft addressed to the poster. This is NOT
+ * threaded onto the digest — each referral becomes its own draft/conversation
+ * so they appear as separate items in the Drafts folder.
+ */
+export async function createReferralDraft(gmail, { toEmail, subject, bodyText }) {
+  const raw = buildReplyRaw({ toEmail, subject, bodyText });
+  return createDraft(gmail, { raw });
+}
+
 /** Convenience: create a threaded reply draft to an original message object. */
 export async function createReplyDraft(gmail, originalMessage, bodyText, overrideToEmail) {
   const from = getHeader(originalMessage, "From");
