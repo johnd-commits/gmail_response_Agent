@@ -49,6 +49,7 @@ export const config = {
   // the insurers below, including Medicare and some Managed Medicare plans.
   criteria: [
     "The poster is seeking a therapist for INDIVIDUAL talk therapy, OR a prescriber / psychiatric medication management (psychiatrist, PMHNP, etc.). Either type matches. COUPLES therapy and FAMILY therapy do NOT match — the practice offers individual therapy only (medication management is fine).",
+    "A request for a female therapist / female-identifying therapist DOES match. The practice has female therapists and this preference must NEVER be a reason to skip.",
     "The patient is an adult, age 18 or older. Requests for children, adolescents, or anyone under 18 do NOT match.",
     "The patient is located in, or the provider must be licensed in, Massachusetts or New Hampshire. Requests that clearly require another state (e.g. Maine, Pennsylvania) do NOT match. If no location is stated, do not exclude on location alone.",
     "The patient's insurance is one of the accepted insurers (which include Medicare and some Managed Medicare / Medicare Advantage plans), OR the poster explicitly states self-pay / out-of-network is acceptable. If insurance is not mentioned at all, treat as a weak/no match and explain.",
