@@ -2,9 +2,10 @@ name: Gmail Triage
 
 on:
   schedule:
-    # 07:00 America/New_York. GitHub cron is UTC; 11:00 UTC ≈ 7am EDT.
-    # (During EST this is 6am; adjust if you need exact local time year-round.)
-    - cron: "0 11 * * *"
+    # Every 6 hours (UTC). Digests are captured within a few hours of arriving.
+    # Duplicate drafts are prevented by the "Triaged" label, so frequent runs
+    # are safe and cheap (already-processed digests are skipped).
+    - cron: "0 */6 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
