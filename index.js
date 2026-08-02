@@ -12,6 +12,9 @@ import {
   getHeader,
   createReplyDraft,
   markAsRead,
+  ensureLabel,
+  getLabelId,
+  addLabel,
 } from "./gmailClient.js";
 import { parseDigest } from "./digestParser.js";
 import { classifyPost } from "./classifier.js";
@@ -30,8 +33,21 @@ async function run() {
   log(`Starting triage run. DRY_RUN=${DRY_RUN}. Query="${config.gmailQuery}"`);
 
   const gmail = getGmail();
-  const messages = await listMessages(gmail, config.gmailQuery, config.maxMessages);
-  log(`Found ${messages.length} candidate digest message(s).`);
+
+  // Dedup: exclude anything already labeled as processed. In a real run we
+  // create the label (so we can apply it afterward); in dry-run we only use it
+  // for exclusion if it already exists, so dry-run never mutates Gmail.
+  let processedLabelId = null;
+  let query = config.gmailQuery;
+  if (config.processedLabel) {
+    processedLabelId = DRY_RUN
+      ? await getLabelId(gmail, config.processedLabel)
+      : await ensureLabel(gmail, config.processedLabel);
+    if (processedLabelId) query += ` -label:"${config.processedLabel}"`;
+  }
+
+  const messages = await listMessages(gmail, query, config.maxMessages);
+  log(`Found ${messages.length} candidate digest message(s). Query="${query}"`);
 
   let matched = 0;
   let skipped = 0;
@@ -78,6 +94,15 @@ async function run() {
         log(`  ✓ draft created (id=${draft.id}).`);
       } catch (err) {
         log(`  ! draft error for "${post.topic}": ${err.message}`);
+      }
+    }
+
+    if (!DRY_RUN && processedLabelId) {
+      try {
+        await addLabel(gmail, id, processedLabelId);
+        log(`  labeled "${config.processedLabel}" (won't be processed again).`);
+      } catch (err) {
+        log(`  ! could not apply processed label: ${err.message}`);
       }
     }
 

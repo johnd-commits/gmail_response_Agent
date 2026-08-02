@@ -202,3 +202,33 @@ export async function markAsRead(gmail, id) {
     requestBody: { removeLabelIds: ["UNREAD"] },
   });
 }
+
+/** Returns the id of an existing label, or null if it doesn't exist. */
+export async function getLabelId(gmail, name) {
+  const res = await gmail.users.labels.list({ userId: "me" });
+  const existing = (res.data.labels || []).find((l) => l.name === name);
+  return existing ? existing.id : null;
+}
+
+/** Returns the id of a label, creating it if it doesn't exist. */
+export async function ensureLabel(gmail, name) {
+  const existingId = await getLabelId(gmail, name);
+  if (existingId) return existingId;
+  const created = await gmail.users.labels.create({
+    userId: "me",
+    requestBody: {
+      name,
+      labelListVisibility: "labelShow",
+      messageListVisibility: "show",
+    },
+  });
+  return created.data.id;
+}
+
+export async function addLabel(gmail, id, labelId) {
+  await gmail.users.messages.modify({
+    userId: "me",
+    id,
+    requestBody: { addLabelIds: [labelId] },
+  });
+}

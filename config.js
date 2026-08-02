@@ -10,6 +10,12 @@ export const config = {
   // Max digest messages to pull per run.
   maxMessages: Number(process.env.MAX_MESSAGES || 10),
 
+  // Dedup: after a digest is processed (non-dry-run), it gets this Gmail label,
+  // and the search below excludes anything already labeled. This prevents the
+  // daily run from drafting the same post twice, and works in CI (state lives
+  // in Gmail, not on disk). Set to "" to disable.
+  processedLabel: process.env.PROCESSED_LABEL || "Triaged",
+
   // Anthropic model. For a cheaper/faster option at higher volume, try
   // "claude-haiku-4-5". (Newer models manage sampling internally, so we don't
   // set a temperature.)
@@ -36,17 +42,19 @@ export const config = {
   ],
 
   // The core clinical criteria that define a match.
-  // This practice provides THERAPY (talk therapy) for ADULTS (18+) and accepts
-  // Medicare and some Managed Medicare / Medicare Advantage plans.
+  // This practice serves ADULTS (18+) in Massachusetts and New Hampshire,
+  // offering INDIVIDUAL talk therapy AND psychiatric medication management /
+  // prescribing (the practice has therapists and a PMHNP prescriber). It accepts
+  // the insurers below, including Medicare and some Managed Medicare plans.
   criteria: [
-    "The poster is seeking a therapist / talk therapy (individual, couples, family, etc.). Requests seeking ONLY a prescriber or medication management do NOT match — this practice provides therapy, not prescribing.",
+    "The poster is seeking a therapist for INDIVIDUAL talk therapy, OR a prescriber / psychiatric medication management (psychiatrist, PMHNP, etc.). Either type matches. COUPLES therapy and FAMILY therapy do NOT match — the practice offers individual therapy only (medication management is fine).",
     "The patient is an adult, age 18 or older. Requests for children, adolescents, or anyone under 18 do NOT match.",
-    "The patient's insurance is one of the accepted insurers (which include Medicare and some Managed Medicare / Medicare Advantage plans), OR the poster explicitly states self-pay. If insurance is not mentioned at all, treat as a weak/no match and explain.",
-    "The request is an active referral seeking a provider (not a general discussion, job posting, or administrative notice).",
+    "The patient is located in, or the provider must be licensed in, Massachusetts or New Hampshire. Requests that clearly require another state (e.g. Maine, Pennsylvania) do NOT match. If no location is stated, do not exclude on location alone.",
+    "The patient's insurance is one of the accepted insurers (which include Medicare and some Managed Medicare / Medicare Advantage plans), OR the poster explicitly states self-pay / out-of-network is acceptable. If insurance is not mentioned at all, treat as a weak/no match and explain.",
+    "The request is an active referral seeking a provider (not a general discussion, training/CEU question, workshop or service announcement, or an already-filled request).",
   ],
 
   // Your signature block, appended to / used by draft replies.
-  // TODO: replace with your real name, credentials, practice, and contact.
   signature: process.env.SIGNATURE ||
     [
       "John Donovan FNP-BC, PMHNP-BC",
