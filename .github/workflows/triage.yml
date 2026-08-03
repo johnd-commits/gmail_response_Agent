@@ -2,10 +2,9 @@ name: Gmail Triage
 
 on:
   schedule:
-    # Every hour (UTC). Individual Google Groups emails are triaged promptly.
-    # Duplicate drafts are prevented by the "Triaged" label, so frequent runs
-    # are safe and cheap (already-processed messages are skipped).
-    - cron: "0 * * * *"
+    # Every hour at :15 UTC (not :00 — GitHub often delays/drops top-of-hour jobs
+    # due to load). Dedup via the "Triaged" label keeps frequent runs safe.
+    - cron: "15 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
