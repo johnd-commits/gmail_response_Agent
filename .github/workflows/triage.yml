@@ -2,10 +2,10 @@ name: Gmail Triage
 
 on:
   schedule:
-    # Every 6 hours (UTC). Digests are captured within a few hours of arriving.
+    # Every hour (UTC). Individual Google Groups emails are triaged promptly.
     # Duplicate drafts are prevented by the "Triaged" label, so frequent runs
-    # are safe and cheap (already-processed digests are skipped).
-    - cron: "0 */6 * * *"
+    # are safe and cheap (already-processed messages are skipped).
+    - cron: "0 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:

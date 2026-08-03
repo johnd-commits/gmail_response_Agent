@@ -72,6 +72,61 @@ function cleanSnippet(body, max = 400) {
   return text.length > max ? text.slice(0, max).trimEnd() + "…" : text;
 }
 
+function firstGroupsLink(block) {
+  const m = (block || "").match(/https?:\/\/groups\.google\.com\/\S+/i);
+  return m ? m[0].replace(/[)>.,]+$/, "") : undefined;
+}
+
+/** True if the body looks like a bundled Google Groups digest. */
+export function looksLikeDigest(body) {
+  if (!body) return false;
+  return (
+    /Today's topic summary/i.test(body) ||
+    MSG_DELIM_RE.test(body) ||
+    /^Topic:\s+/m.test(body)
+  );
+}
+
+/**
+ * Parse a single (non-digest) Google Groups email into one post.
+ * Prefer a personal From address; fall back to Reply-To if From is a group address.
+ */
+export function parseIndividualMessage({ subject, from, replyTo, body }) {
+  const fromParsed = splitFromHeader(from);
+  const replyParsed = splitFromHeader(replyTo);
+
+  let sender = fromParsed.sender;
+  let senderEmail = fromParsed.senderEmail;
+
+  const fromIsGroup = senderEmail && /googlegroups\.com$/i.test(senderEmail);
+  const replyIsPersonal =
+    replyParsed.senderEmail && !/googlegroups\.com$/i.test(replyParsed.senderEmail);
+
+  if ((!senderEmail || fromIsGroup) && replyIsPersonal) {
+    sender = sender || replyParsed.sender;
+    senderEmail = replyParsed.senderEmail;
+  }
+
+  // Strip leading [group-name] tag from subject for a cleaner draft subject.
+  const topic =
+    (subject || "")
+      .replace(/^\[[^\]]+\]\s*/, "")
+      .replace(/^Re:\s*/i, "")
+      .trim() || "(no subject)";
+
+  const cleanedBody = stripFooter((body || "").replace(/\r/g, "")).trim();
+
+  return {
+    topic,
+    sender: sender || senderEmail || "(unknown)",
+    senderEmail,
+    date: undefined,
+    link: firstGroupsLink(cleanedBody),
+    snippet: cleanSnippet(cleanedBody),
+    body: cleanedBody,
+  };
+}
+
 function buildPost(topic, topicUrl, msg) {
   const rawBody = msg.bodyLines.join("\n");
   // Trim leading/trailing separator/blank lines, then strip Google footer.

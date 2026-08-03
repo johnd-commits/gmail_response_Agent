@@ -16,7 +16,7 @@ import {
   getLabelId,
   addLabel,
 } from "./gmailClient.js";
-import { parseDigest } from "./digestParser.js";
+import { looksLikeDigest, parseDigest, parseIndividualMessage } from "./digestParser.js";
 import { classifyPost } from "./classifier.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -65,7 +65,7 @@ async function run() {
   }
 
   const messages = await listMessages(gmail, query, config.maxMessages);
-  log(`Found ${messages.length} candidate digest message(s). Query="${query}"`);
+  log(`Found ${messages.length} candidate message(s). Query="${query}"`);
 
   let matched = 0;
   let skipped = 0;
@@ -73,9 +73,20 @@ async function run() {
   for (const { id } of messages) {
     const message = await getMessage(gmail, id);
     const subject = getHeader(message, "Subject") || "(no subject)";
+    const from = getHeader(message, "From");
+    const replyTo = getHeader(message, "Reply-To");
     const body = getPlainTextBody(message);
-    const posts = parseDigest(body);
-    log(`Digest "${subject}" -> ${posts.length} parsed post(s).`);
+
+    // Prefer per-email posts; fall back to digest splitting if a bundled digest
+    // still arrives (e.g. during the subscription transition).
+    let posts;
+    if (looksLikeDigest(body) || /digest for/i.test(subject)) {
+      posts = parseDigest(body);
+      log(`Digest "${subject}" -> ${posts.length} parsed post(s).`);
+    } else {
+      posts = [parseIndividualMessage({ subject, from, replyTo, body })];
+      log(`Message "${subject}" -> 1 post from ${posts[0].sender}.`);
+    }
 
     for (const post of posts) {
       let result;
@@ -106,8 +117,7 @@ async function run() {
       }
 
       try {
-        // Standalone draft to the poster (not threaded onto the digest), so each
-        // referral shows as its own item in Drafts.
+        // Standalone draft to the poster (not threaded onto the group email).
         const draft = await createReferralDraft(gmail, {
           toEmail: post.senderEmail,
           subject: post.topic,
@@ -135,7 +145,7 @@ async function run() {
     if (!DRY_RUN && config.markProcessedRead) {
       try {
         await markAsRead(gmail, id);
-        log(`  marked digest as read.`);
+        log(`  marked message as read.`);
       } catch (err) {
         log(`  ! could not mark read: ${err.message}`);
       }

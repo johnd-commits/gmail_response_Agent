@@ -3,17 +3,19 @@
 // Nothing secret lives here — API keys/tokens go in .env (gitignored).
 
 export const config = {
-  // Gmail search used to find candidate digest emails.
-  // Tune the sender(s) / recency to match your actual listserv sources.
-  gmailQuery: process.env.GMAIL_QUERY || "from:googlegroups.com is:unread newer_than:1d",
+  // Gmail search for candidate listserv emails. Individual Google Groups posts
+  // (not digests). -subject:"Digest for" excludes bundled digests if any remain.
+  gmailQuery:
+    process.env.GMAIL_QUERY ||
+    'from:googlegroups.com is:unread newer_than:1d -subject:"Digest for"',
 
-  // Max digest messages to pull per run.
-  maxMessages: Number(process.env.MAX_MESSAGES || 10),
+  // Max messages to pull per run (individual emails can pile up between hourly runs).
+  maxMessages: Number(process.env.MAX_MESSAGES || 25),
 
-  // Dedup: after a digest is processed (non-dry-run), it gets this Gmail label,
-  // and the search below excludes anything already labeled. This prevents the
-  // daily run from drafting the same post twice, and works in CI (state lives
-  // in Gmail, not on disk). Set to "" to disable.
+  // Dedup: after a message is processed (non-dry-run), it gets this Gmail label,
+  // and the search below excludes anything already labeled. This prevents hourly
+  // runs from drafting the same post twice (state lives in Gmail, not on disk).
+  // Set to "" to disable.
   processedLabel: process.env.PROCESSED_LABEL || "Triaged",
 
   // Anthropic model. For a cheaper/faster option at higher volume, try
@@ -24,7 +26,7 @@ export const config = {
     maxTokens: 1024,
   },
 
-  // If true, mark processed digests as read so they aren't re-processed.
+  // If true, mark processed messages as read so they aren't re-processed.
   // Requires the gmail.modify scope.
   markProcessedRead: process.env.MARK_READ === "true",
 

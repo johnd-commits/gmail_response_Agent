@@ -2,8 +2,8 @@
 
 A small **scheduled script** (not a chat) that:
 
-1. Pulls new Google Groups listserv **digest** emails via the Gmail API.
-2. **Splits** each digest into individual posts.
+1. Pulls new Google Groups listserv emails (individual posts) via the Gmail API.
+2. **Parses** each email into a structured post (digest emails still supported as a fallback).
 3. **Classifies** each post with the Claude API against your insurance list + criteria.
 4. For matches, **creates a Gmail draft** reply — **never auto-sends**.
 
@@ -16,10 +16,10 @@ You review the Drafts folder and send the good ones yourself.
 | `config.js` | Insurers, match criteria, signature, Gmail query, model settings |
 | `gmailClient.js` | OAuth + list/get messages + create threaded draft (no send helper) |
 | `auth.js` | One-time OAuth flow (`npm run auth`) → `token.json` + refresh token |
-| `digestParser.js` | Splits a Google Groups digest into `{topic, sender, snippet, link, body}` |
+| `digestParser.js` | Parses individual group emails (and digests) into `{topic, sender, snippet, link, body}` |
 | `classifier.js` | Sends a post to Claude, returns `{matches, reason, draftReply}` |
 | `index.js` | Orchestrates fetch → parse → classify → draft, with dry-run + logging |
-| `.github/workflows/triage.yml` | Daily cron on GitHub Actions |
+| `.github/workflows/triage.yml` | Hourly cron on GitHub Actions |
 
 ## Setup
 
