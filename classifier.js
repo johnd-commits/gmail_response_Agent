@@ -33,6 +33,11 @@ function buildSystemPrompt() {
     "When it matches, write a short, warm reply whose ONLY goal is to make it",
     "effortless for the referrer to send the client to us. We do the selling; we",
     "put ZERO work back on the referrer. Follow these rules exactly:",
+    "- Open with the poster's first name whenever possible: 'Hi [FirstName],'.",
+    "  Extract the first name from the Poster field (e.g. 'David Lane' → 'David',",
+    "  'Stephen Brevik, PsyD' → 'Stephen', 'Emily Gannon' → 'Emily'). Strip titles",
+    "  and credentials. If the first token is only an initial or the name is unclear",
+    "  (e.g. 'k carreira', 'Dr. Smith'), use 'Hi there,' instead — never invent a name.",
     "- Briefly reflect back the type of care they're seeking so it's clear we fit",
     "  (e.g. 'individual therapy for an adult client working through OCD').",
     "- Affirmatively state that we accept the insurance named in their post (name",
@@ -82,12 +87,30 @@ const TRIAGE_TOOL = {
   },
 };
 
+/** Best-effort first name from a display name like "Stephen Brevik, PsyD". */
+export function extractFirstName(sender) {
+  if (!sender || typeof sender !== "string") return null;
+  if (/unknown|noreply|no.?reply/i.test(sender)) return null;
+  const beforeComma = sender.split(",")[0].trim();
+  const cleaned = beforeComma.replace(/^(Dr\.|Mr\.|Ms\.|Mrs\.|Miss|Prof\.)\s+/i, "");
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (!parts.length) return null;
+  const first = parts[0].replace(/[^\p{L}'-]/gu, "");
+  // Skip initials / single letters (e.g. "k", "J.")
+  if (!first || first.length <= 1) return null;
+  return first.charAt(0).toUpperCase() + first.slice(1);
+}
+
 function buildUserPrompt(post) {
+  const firstName = extractFirstName(post.sender);
   return [
     "Evaluate this listserv post:",
     "",
     `Topic/Subject: ${post.topic}`,
     `Poster: ${post.sender}${post.senderEmail ? ` <${post.senderEmail}>` : ""}`,
+    firstName
+      ? `First name for greeting: ${firstName}  (use: Hi ${firstName},)`
+      : "First name for greeting: (unclear — use Hi there,)",
     post.link ? `Link: ${post.link}` : "",
     "",
     "Post body:",
