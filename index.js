@@ -29,8 +29,26 @@ function log(line) {
   fs.appendFileSync(LOG_PATH, stamped + "\n");
 }
 
+function loadReferralSheet() {
+  const sheetPath = path.resolve(__dirname, config.referralSheet.path);
+  if (!fs.existsSync(sheetPath)) {
+    log(`WARNING: referral sheet not found at ${sheetPath}; drafts will have no attachment.`);
+    return null;
+  }
+  return {
+    filename: config.referralSheet.filename,
+    mimeType: "application/pdf",
+    content: fs.readFileSync(sheetPath),
+  };
+}
+
 async function run() {
   log(`Starting triage run. DRY_RUN=${DRY_RUN}. Query="${config.gmailQuery}"`);
+
+  const attachment = loadReferralSheet();
+  if (attachment) {
+    log(`Attaching referral sheet (${attachment.filename}, ${attachment.content.length} bytes).`);
+  }
 
   const gmail = getGmail();
 
@@ -94,8 +112,12 @@ async function run() {
           toEmail: post.senderEmail,
           subject: post.topic,
           bodyText: result.draftReply,
+          attachment,
         });
-        log(`  ✓ draft created to ${post.senderEmail} (id=${draft.id}).`);
+        log(
+          `  ✓ draft created to ${post.senderEmail} (id=${draft.id}` +
+            `${attachment ? ", with referral sheet" : ""}).`
+        );
       } catch (err) {
         log(`  ! draft error for "${post.topic}": ${err.message}`);
       }

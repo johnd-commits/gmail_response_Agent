@@ -64,4 +64,12 @@ export const config = {
       "P: (781) 488-6163 | F: (781) 443-8414",
       "To schedule an appointment, email: info@bedrehealth.com",
     ].join("\n"),
+
+  // PDF attached to every referral draft. Path is relative to the project root.
+  referralSheet: {
+    path: process.env.REFERRAL_SHEET_PATH || "assets/Bedre-Health-Referral-Sheet.pdf",
+    filename: "Bedre-Health-Referral-Sheet.pdf",
+    mention:
+      "For future reference, I'm attaching our referral sheet for your convenience.",
+  },
 };

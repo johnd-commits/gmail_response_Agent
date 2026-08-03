@@ -132,31 +132,75 @@ export function getPlainTextBody(message) {
   return walk(payload);
 }
 
-function base64UrlEncode(str) {
-  return Buffer.from(str, "utf8")
+function base64UrlEncode(buf) {
+  return Buffer.from(buf)
     .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 }
 
+function chunkBase64(b64, size = 76) {
+  return b64.match(new RegExp(`.{1,${size}}`, "g")).join("\r\n");
+}
+
 /**
- * Builds a raw RFC 2822 reply MIME string that threads correctly.
- * Pass the original message so we can set To/Subject/In-Reply-To/References.
+ * Builds a raw RFC 2822 MIME string. Optional attachment: { filename, content }
+ * where content is a Buffer (e.g. a PDF).
  */
-export function buildReplyRaw({ toEmail, subject, inReplyTo, references, bodyText, fromEmail }) {
+export function buildReplyRaw({
+  toEmail,
+  subject,
+  inReplyTo,
+  references,
+  bodyText,
+  fromEmail,
+  attachment,
+}) {
   const replySubject = /^re:/i.test(subject || "") ? subject : `Re: ${subject || ""}`.trim();
-  const lines = [];
-  if (fromEmail) lines.push(`From: ${fromEmail}`);
-  lines.push(`To: ${toEmail}`);
-  lines.push(`Subject: ${replySubject}`);
-  if (inReplyTo) lines.push(`In-Reply-To: ${inReplyTo}`);
-  if (references) lines.push(`References: ${references}`);
-  lines.push('Content-Type: text/plain; charset="UTF-8"');
-  lines.push("MIME-Version: 1.0");
-  lines.push("");
-  lines.push(bodyText);
-  return base64UrlEncode(lines.join("\r\n"));
+  const headers = [];
+  if (fromEmail) headers.push(`From: ${fromEmail}`);
+  headers.push(`To: ${toEmail}`);
+  headers.push(`Subject: ${replySubject}`);
+  if (inReplyTo) headers.push(`In-Reply-To: ${inReplyTo}`);
+  if (references) headers.push(`References: ${references}`);
+  headers.push("MIME-Version: 1.0");
+
+  let mime;
+  if (attachment?.content) {
+    const boundary = `boundary_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const filename = attachment.filename || "attachment.pdf";
+    const mimeType = attachment.mimeType || "application/pdf";
+    const fileB64 = chunkBase64(attachment.content.toString("base64"));
+    mime = [
+      ...headers,
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      "",
+      `--${boundary}`,
+      'Content-Type: text/plain; charset="UTF-8"',
+      "Content-Transfer-Encoding: 7bit",
+      "",
+      bodyText,
+      "",
+      `--${boundary}`,
+      `Content-Type: ${mimeType}; name="${filename}"`,
+      "Content-Transfer-Encoding: base64",
+      `Content-Disposition: attachment; filename="${filename}"`,
+      "",
+      fileB64,
+      `--${boundary}--`,
+      "",
+    ].join("\r\n");
+  } else {
+    mime = [
+      ...headers,
+      'Content-Type: text/plain; charset="UTF-8"',
+      "",
+      bodyText,
+    ].join("\r\n");
+  }
+
+  return base64UrlEncode(mime);
 }
 
 /**
@@ -180,9 +224,10 @@ export async function createDraft(gmail, { raw, threadId }) {
  * Creates a standalone referral draft addressed to the poster. This is NOT
  * threaded onto the digest — each referral becomes its own draft/conversation
  * so they appear as separate items in the Drafts folder.
+ * Optional attachment: { filename, content (Buffer), mimeType }.
  */
-export async function createReferralDraft(gmail, { toEmail, subject, bodyText }) {
-  const raw = buildReplyRaw({ toEmail, subject, bodyText });
+export async function createReferralDraft(gmail, { toEmail, subject, bodyText, attachment }) {
+  const raw = buildReplyRaw({ toEmail, subject, bodyText, attachment });
   return createDraft(gmail, { raw });
 }
 
