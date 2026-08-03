@@ -4,10 +4,11 @@
 
 export const config = {
   // Gmail search for candidate listserv emails. Individual Google Groups posts
-  // (not digests). -subject:"Digest for" excludes bundled digests if any remain.
+  // (not digests). Dedup is via the Triaged label (not is:unread), so Gmail
+  // filters may mark these read without breaking triage.
   gmailQuery:
     process.env.GMAIL_QUERY ||
-    'from:googlegroups.com is:unread newer_than:1d -subject:"Digest for"',
+    'from:googlegroups.com newer_than:1d -subject:"Digest for"',
 
   // Max messages to pull per run (individual emails can pile up between hourly runs).
   maxMessages: Number(process.env.MAX_MESSAGES || 25),
