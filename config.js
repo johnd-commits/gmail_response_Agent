@@ -38,6 +38,7 @@ export const config = {
     "Aetna",
     "Point32 / Harvard Pilgrim / Tufts",
     "Optum",
+    "UnitedHealthcare / UHC / United (incl. Optum behavioral health)",
     "Evernorth",
     "Blue Cross Blue Shield (BCBS)",
     "Mass General Brigham (MGB)",
