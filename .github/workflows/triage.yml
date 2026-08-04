@@ -2,9 +2,11 @@ name: Gmail Triage
 
 on:
   schedule:
-    # Every hour at :15 UTC (not :00 — GitHub often delays/drops top-of-hour jobs
-    # due to load). Dedup via the "Triaged" label keeps frequent runs safe.
+    # Twice an hour (:15 and :45 UTC). GitHub frequently delays or drops scheduled
+    # jobs under load, so a second slot catches backlog within ~30 minutes.
+    # Dedup via the "Triaged" label keeps extra runs safe/cheap.
     - cron: "15 * * * *"
+    - cron: "45 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
