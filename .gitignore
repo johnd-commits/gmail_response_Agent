@@ -5,4 +5,5 @@ dist/
 token.json
 credentials.json
 *.log
+triage-scheduler.log
 samples/real-*.txt
